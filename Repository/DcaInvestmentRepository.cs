@@ -60,12 +60,12 @@ namespace apicrypto.Repository
 
           if(query.StartDate.HasValue) //startDate
           {
-            investments = investments.Where(s => s.StartDate == query.StartDate);
+            investments = investments.Where(s => s.StartDate >= query.StartDate); //or strict equal?
           }
 
            if(query.EndDate.HasValue) //endDate
           {
-            investments = investments.Where(s => s.EndDate == query.EndDate);
+            investments = investments.Where(s => s.EndDate <= query.EndDate);
           }
 
 
