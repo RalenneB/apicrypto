@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using apicrypto.Data;
+using apicrypto.Dtos;
+using apicrypto.Dtos.DcaInvestmentDto;
 using apicrypto.Helpers;
 using apicrypto.Interfaces;
 using apicrypto.Mappers;
@@ -25,15 +27,21 @@ namespace apicrypto.Controllers
         }
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] QueryObject query){
-            var investments = await _investmentRepo.GetAllAsync();
+             if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+                
+            var investments = await _investmentRepo.GetAllAsync(query);
 
-           var investmentDto = investments.Select(s => s.ToDcaInvestmentDto()); // deferred exec
+            var investmentDto = investments.Select(s => s.ToDcaInvestmentDto()); // deferred exec
 
             return Ok(investments);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id) {
+             if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+                
 
             // var investment = await _context.DcaInvestments.FindAsync(id);
             var investment = await _investmentRepo.GetByIdAsync(id);
@@ -83,6 +91,55 @@ namespace apicrypto.Controllers
             }
             return Ok(amount.ToDcaInvestmentDto());
         }
-        
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateDcaInvestmentRequestDto dcaIntvestmentDto)
+        {
+            if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+                
+            var dcaInvestmentModel = dcaIntvestmentDto.ToDcaInvestmentFromCreateDTO();
+            await _investmentRepo.CreateAsync(dcaInvestmentModel);
+
+            return CreatedAtAction(nameof(GetById), new { id = dcaInvestmentModel.Id}, dcaInvestmentModel.ToDcaInvestmentDto()) ;
+        }
+
+        [HttpPut]
+        [Route("{id:int}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateDcaInvestmentRequestDto updateDto )
+        {
+             if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+                
+            var dcaInvestmentModel = await _investmentRepo.UpdateAsync(id, updateDto);
+
+            if(dcaInvestmentModel == null)
+             { 
+                return NotFound();
+
+            }
+
+
+            return Ok(dcaInvestmentModel.ToDcaInvestmentDto());
+
+        }
+
+        [HttpDelete]
+        [Route("{id:int}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+             if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+                
+            var dcaInvestmentModel = _investmentRepo.DeleteAsync(id);
+
+            if (dcaInvestmentModel == null) 
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+
+        }
     }
 }
